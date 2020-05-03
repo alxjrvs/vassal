@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fs_1 = __importDefault(require("fs"));
 exports.fromFile = (path) => {
     try {
-        return fs_1.default.readFileSync(`./json/locales/${path}`).toJSON().data;
+        return JSON.parse(fs_1.default.readFileSync(`./json/locales/${path}.json`).toString('utf8'));
     }
     catch (err) {
         console.log(err);

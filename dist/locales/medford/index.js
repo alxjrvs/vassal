@@ -20,7 +20,7 @@ const toFile_1 = require("../../utils/toFile");
 const fromFile_1 = require("../../utils/fromFile");
 const HOST = 'http://gis.vgsi.com/medfordma';
 const BASE_URL = `${HOST}/Streets.aspx`;
-const sleepTimeout = 200;
+const sleepTimeout = 1000;
 const streetPathSlug = 'Streets.aspx?Name=';
 const addressPidSlug = 'Parcel.aspx?pid=';
 let streetCount = 1;
@@ -45,7 +45,7 @@ const getAddressPidsMap = (streetPath) => __awaiter(void 0, void 0, void 0, func
     console.log(`Getting Street #${streetCount++}`);
     return paths;
 });
-const getAddressData = (addressPids = fromFile_1.fromFile('medford/PIDS.json')) => __awaiter(void 0, void 0, void 0, function* () { return Promise.all(addressPids.map(getAddressDataMap)); });
+const getAddressData = (addressPids) => __awaiter(void 0, void 0, void 0, function* () { return Promise.all(addressPids.map(getAddressDataMap)); });
 const getAddressDataMap = (addressPid) => __awaiter(void 0, void 0, void 0, function* () {
     console.log('LOGGING');
     const page = yield loadPage_1.loadPage(`${HOST}/Parcel.aspx?pid=${addressPid}`);
@@ -53,14 +53,23 @@ const getAddressDataMap = (addressPid) => __awaiter(void 0, void 0, void 0, func
     console.log(`loaded address pid #${addressPid}, count #${addressCount}`);
     return page.toString();
 });
-const buildCache = () => __awaiter(void 0, void 0, void 0, function* () {
+const buildStreetNameCache = () => __awaiter(void 0, void 0, void 0, function* () {
     const streetNames = lodash_flatten_1.default(yield getStreetNames());
     toFile_1.toFile('medford/STREET_NAMES', JSON.stringify(streetNames));
-    const addressPids = lodash_flatten_1.default(yield getAddressPids(streetNames));
+});
+const buildAddressPidText = () => __awaiter(void 0, void 0, void 0, function* () {
+    const cachedStreetNames = fromFile_1.fromFile('medford/STREET_NAMES');
+    const addressPids = lodash_flatten_1.default(yield getAddressPids(cachedStreetNames));
     toFile_1.toFile('medford/PIDS', JSON.stringify(addressPids));
 });
+const buildCache = () => __awaiter(void 0, void 0, void 0, function* () {
+    yield buildStreetNameCache();
+    yield buildAddressPidText();
+});
 const parse = () => __awaiter(void 0, void 0, void 0, function* () {
-    const addressData = lodash_flatten_1.default(yield getAddressData());
+    const foo = yield fromFile_1.fromFile('medford/PIDS');
+    console.log(foo);
+    const addressData = lodash_flatten_1.default(yield getAddressData(foo));
     console.log('LETS A GO: ' + addressData.length);
     return addressData;
 });

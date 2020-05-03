@@ -1,4 +1,4 @@
 import { Medford } from './locales'
 
-// Medford.parse()
-Medford.buildCache()
+// Medford.buildCache()
+Medford.parse()

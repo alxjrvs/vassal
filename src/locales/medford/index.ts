@@ -9,7 +9,7 @@ import { fromFile } from '../../utils/fromFile'
 const HOST = 'http://gis.vgsi.com/medfordma'
 const BASE_URL = `${HOST}/Streets.aspx`
 
-const sleepTimeout = 200
+const sleepTimeout = 1000
 
 const streetPathSlug = 'Streets.aspx?Name='
 const addressPidSlug = 'Parcel.aspx?pid='
@@ -41,7 +41,7 @@ const getAddressPidsMap = async (streetPath: string) => {
   return paths
 }
 
-const getAddressData = async (addressPids: number[] = fromFile('medford/PIDS.json')) =>
+const getAddressData = async (addressPids: number[]) =>
   Promise.all(addressPids.map(getAddressDataMap))
 
 const getAddressDataMap = async (addressPid: number) => {
@@ -52,15 +52,26 @@ const getAddressDataMap = async (addressPid: number) => {
   return page.toString()
 }
 
-const buildCache = async () => {
+const buildStreetNameCache = async () => {
   const streetNames = flatten(await getStreetNames())
   toFile('medford/STREET_NAMES', JSON.stringify(streetNames))
-  const addressPids = flatten(await getAddressPids(streetNames))
+}
+
+const buildAddressPidText = async () => {
+  const cachedStreetNames = fromFile('medford/STREET_NAMES')
+  const addressPids = flatten(await getAddressPids(cachedStreetNames))
   toFile('medford/PIDS', JSON.stringify(addressPids))
 }
 
+const buildCache = async () => {
+  await buildStreetNameCache()
+  await buildAddressPidText()
+}
+
 const parse = async () => {
-  const addressData = flatten(await getAddressData())
+  const foo = await fromFile('medford/PIDS')
+  console.log(foo)
+  const addressData = flatten(await getAddressData(foo))
   console.log('LETS A GO: ' + addressData.length)
   return addressData
 }
