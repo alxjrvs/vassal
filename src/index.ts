@@ -1,3 +1,4 @@
-console.log('HEY')
+import { Medford } from './locales'
 
-export const Foo = (foo: number) => foo + 1
+// Medford.parse()
+Medford.buildCache()
