@@ -15,20 +15,21 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const lodash_flatten_1 = __importDefault(require("lodash.flatten"));
 const const_1 = require("../../const");
 const loadPage_1 = require("../../utils/loadPage");
-const sleep_1 = require("../../utils/sleep");
+// import { sleep } from '../../utils/sleep'
 const toFile_1 = require("../../utils/toFile");
 const fromFile_1 = require("../../utils/fromFile");
+// import { batchPromise } from '../../utils/batchPromise'
 const HOST = 'http://gis.vgsi.com/medfordma';
 const BASE_URL = `${HOST}/Streets.aspx`;
-const sleepTimeout = 1000;
+// const sleepTimeout = 0
 const streetPathSlug = 'Streets.aspx?Name=';
 const addressPidSlug = 'Parcel.aspx?pid=';
 let streetCount = 1;
 let addressCount = 1;
 const getStreetNames = () => __awaiter(void 0, void 0, void 0, function* () { return Promise.all(const_1.ALPHABET.map(getStreetNameMap)); });
 const getStreetNameMap = (letter) => __awaiter(void 0, void 0, void 0, function* () {
+    // sleep(sleepTimeout)
     const page = yield loadPage_1.loadPage(`${BASE_URL}?Letter=${letter}`);
-    sleep_1.sleep(sleepTimeout);
     const paths = page(`a[href*='${streetPathSlug}']`)
         .toArray()
         .map(e => page(e).text());
@@ -37,8 +38,8 @@ const getStreetNameMap = (letter) => __awaiter(void 0, void 0, void 0, function*
 });
 const getAddressPids = (streetNames) => __awaiter(void 0, void 0, void 0, function* () { return Promise.all(streetNames.map(getAddressPidsMap)); });
 const getAddressPidsMap = (streetPath) => __awaiter(void 0, void 0, void 0, function* () {
+    // sleep(sleepTimeout)
     const page = yield loadPage_1.loadPage(`${HOST}/Streets.aspx?Name=${encodeURIComponent(streetPath)}`);
-    sleep_1.sleep(sleepTimeout);
     const paths = page(`a[href*='${addressPidSlug}']`)
         .toArray()
         .map(e => Number(e.attribs.href.replace(addressPidSlug, '')));
@@ -46,12 +47,12 @@ const getAddressPidsMap = (streetPath) => __awaiter(void 0, void 0, void 0, func
     return paths;
 });
 const getAddressData = (addressPids) => __awaiter(void 0, void 0, void 0, function* () { return Promise.all(addressPids.map(getAddressDataMap)); });
+// batchPromise({ list: addressPids.map(getAddressDataMap) })
 const getAddressDataMap = (addressPid) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log('LOGGING');
+    // sleep(sleepTimeout)
     const page = yield loadPage_1.loadPage(`${HOST}/Parcel.aspx?pid=${addressPid}`);
-    sleep_1.sleep(sleepTimeout);
-    console.log(`loaded address pid #${addressPid}, count #${addressCount}`);
-    return page.toString();
+    console.log(`loaded address pid #${addressPid}, count #${addressCount++}`);
+    return page.html;
 });
 const buildStreetNameCache = () => __awaiter(void 0, void 0, void 0, function* () {
     const streetNames = lodash_flatten_1.default(yield getStreetNames());
@@ -67,14 +68,17 @@ const buildCache = () => __awaiter(void 0, void 0, void 0, function* () {
     yield buildAddressPidText();
 });
 const parse = () => __awaiter(void 0, void 0, void 0, function* () {
-    const foo = yield fromFile_1.fromFile('medford/PIDS');
-    console.log(foo);
-    const addressData = lodash_flatten_1.default(yield getAddressData(foo));
+    const addresPids = yield fromFile_1.fromFile('medford/PIDS');
+    const addressData = lodash_flatten_1.default(yield getAddressData(addresPids));
     console.log('LETS A GO: ' + addressData.length);
     return addressData;
 });
+const parseSingleAddress = (pid) => __awaiter(void 0, void 0, void 0, function* () {
+    return yield getAddressDataMap(pid);
+});
 exports.Medford = {
     parse,
+    parseSingleAddress,
     buildCache,
 };
 //# sourceMappingURL=index.js.map

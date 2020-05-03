@@ -2,25 +2,27 @@ import flatten from 'lodash.flatten'
 
 import { ALPHABET } from '../../const'
 import { loadPage } from '../../utils/loadPage'
-import { sleep } from '../../utils/sleep'
+// import { sleep } from '../../utils/sleep'
 import { toFile } from '../../utils/toFile'
 import { fromFile } from '../../utils/fromFile'
+// import { batchPromise } from '../../utils/batchPromise'
 
 const HOST = 'http://gis.vgsi.com/medfordma'
 const BASE_URL = `${HOST}/Streets.aspx`
 
-const sleepTimeout = 1000
+// const sleepTimeout = 1000
 
 const streetPathSlug = 'Streets.aspx?Name='
 const addressPidSlug = 'Parcel.aspx?pid='
 
 let streetCount = 1
 let addressCount = 1
+
 const getStreetNames = async () => Promise.all(ALPHABET.map(getStreetNameMap))
 
 const getStreetNameMap = async (letter: string) => {
+  // sleep(sleepTimeout)
   const page = await loadPage(`${BASE_URL}?Letter=${letter}`)
-  sleep(sleepTimeout)
   const paths = page(`a[href*='${streetPathSlug}']`)
     .toArray()
     .map(e => page(e).text())
@@ -32,8 +34,8 @@ const getAddressPids = async (streetNames: string[]) =>
   Promise.all(streetNames.map(getAddressPidsMap))
 
 const getAddressPidsMap = async (streetPath: string) => {
+  // sleep(sleepTimeout)
   const page = await loadPage(`${HOST}/Streets.aspx?Name=${encodeURIComponent(streetPath)}`)
-  sleep(sleepTimeout)
   const paths = page(`a[href*='${addressPidSlug}']`)
     .toArray()
     .map(e => Number(e.attribs.href.replace(addressPidSlug, '')))
@@ -43,13 +45,13 @@ const getAddressPidsMap = async (streetPath: string) => {
 
 const getAddressData = async (addressPids: number[]) =>
   Promise.all(addressPids.map(getAddressDataMap))
+// batchPromise({ list: addressPids.map(getAddressDataMap) })
 
 const getAddressDataMap = async (addressPid: number) => {
-  console.log('LOGGING')
+  // sleep(sleepTimeout)
   const page = await loadPage(`${HOST}/Parcel.aspx?pid=${addressPid}`)
-  sleep(sleepTimeout)
-  console.log(`loaded address pid #${addressPid}, count #${addressCount}`)
-  return page.toString()
+  console.log(`loaded address pid #${addressPid}, count #${addressCount++}`)
+  return page.html
 }
 
 const buildStreetNameCache = async () => {
@@ -69,13 +71,17 @@ const buildCache = async () => {
 }
 
 const parse = async () => {
-  const foo = await fromFile('medford/PIDS')
-  console.log(foo)
-  const addressData = flatten(await getAddressData(foo))
+  const addresPids = await fromFile('medford/PIDS')
+  const addressData = flatten(await getAddressData(addresPids))
   console.log('LETS A GO: ' + addressData.length)
   return addressData
 }
+
+const parseSingleAddress = async (pid: number) => {
+  return await getAddressDataMap(pid)
+}
 export const Medford = {
   parse,
+  parseSingleAddress,
   buildCache,
 }
